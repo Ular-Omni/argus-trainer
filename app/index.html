@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Тренажёр Argus</title>
+<meta name="description" content="Словарь безопасности OMNI Argus: карточки, тесты, интервальное повторение">
+<meta name="theme-color" content="#0f766e">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Argus">
+<meta name="referrer" content="no-referrer">
+<!-- Запрет любых внешних загрузок: только файлы самого приложения -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap" id="app"><p class="mut">Загрузка…</p></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true"><div class="box" id="mbox"></div></div>
+<input type="file" id="fimp" accept=".json,application/json" hidden>
+<noscript>Для работы тренажёра нужен включённый JavaScript.</noscript>
+<script src="srs.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
