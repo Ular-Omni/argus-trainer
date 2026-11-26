@@ -1,23 +1,23 @@
 // Интерфейс тренажёра. Логика (повторение, тесты, замки, файл прогресса) — в srs.js.
-// Путь по разделу: Изучение (картинки + подписи) → Тест (все ответы верны с первого раза — следующий раздел открыт).
+// Путь по разделу: Изучение (все карточки раздела) → Тест (все ответы верны с первого раза — следующий раздел открыт).
 // Дальше — «Повторить сегодня» (карточки с переворотом) и итоговый экзамен после всех разделов.
 (function () {
   'use strict';
   const { LEV, PASS, EXAM_N, shuf, score } = SRS;
-  const KEY = 'argus-srs', KEY_SEC = 'argus-sec';
+  const KEY = 'argus-srs', KEY_SEC = 'argus-sec', KEY_SEEN = 'argus-seen';
   const app = document.getElementById('app'), modal = document.getElementById('modal'),
     mbox = document.getElementById('mbox'), fimp = document.getElementById('fimp');
 
-  let DATA = [], T = [], ART = {}, S = null, st = {}, sec = {};
+  let DATA = [], T = [], ART = {}, S = null, st = {}, sec = {}, seen = {};   // seen — какие карточки изучения уже открывали
   const lastTypes = {};   // типы вопросов прошлой попытки — при пересдаче даём другие
   const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   // ---- хранение ----
   let storageOk = true;
   const load = k => { try { return JSON.parse(localStorage.getItem(k) || '{}') || {}; } catch (e) { return {}; } };
-  st = load(KEY); sec = load(KEY_SEC);
+  st = load(KEY); sec = load(KEY_SEC); seen = load(KEY_SEEN);
   const save = () => {
-    try { localStorage.setItem(KEY, JSON.stringify(st)); localStorage.setItem(KEY_SEC, JSON.stringify(sec)); }
+    try { localStorage.setItem(KEY, JSON.stringify(st)); localStorage.setItem(KEY_SEC, JSON.stringify(sec)); localStorage.setItem(KEY_SEEN, JSON.stringify(seen)); }
     catch (e) { if (storageOk) { storageOk = false; toast('Прогресс не сохраняется в этом браузере. Используйте «Сохранить прогресс».'); } }
   };
   const lv = id => SRS.lv(st, id);
@@ -25,7 +25,6 @@
   const grade = (id, ok) => { SRS.grade(st, id, ok); save(); };
   const dueList = () => T.filter(t => due(t.id) && SRS.isOpen(sec, t.si));
   const artOf = (t, kind = 'what') => (ART[`${t.si + 1}-${t.ti + 1}`] || {})[kind];
-  const hasPic = t => !!artOf(t);
   const isOpen = si => SRS.isOpen(sec, si);
   const passedN = () => DATA.filter((s, si) => SRS.passed(sec, si)).length;
 
@@ -85,17 +84,17 @@
  <div class="secs">${DATA.map((s, si) => {
       const n = s.terms.length, k = s.terms.filter((t, ti) => lv(si + '-' + ti) >= 3).length, best = sec[si];
       const open = isOpen(si), ok = SRS.passed(sec, si);
-      const status = ok ? `<span class="ok-badge">✓ сдан · ${best}%</span>` : !open ? `🔒 откроется после раздела ${si}` : best != null ? `не сдан · лучший ${best}%, нужно ${PASS}%` : 'не начат';
+      const status = ok ? '<span class="ok-badge">✓ сдан</span>' : !open ? `🔒 откроется после раздела ${si}` : best != null ? `не сдан · нужно ${n} из ${n} без ошибок` : 'не начат';
       return `<div class="sec${open ? '' : ' locked'}"><div><h3>${si + 1}. ${esc(s.title)}</h3><p>${esc(s.intro)}</p></div><div><div class="sm mut">${status}</div><div class="bar"><b style="width:${k / n * 100}%"></b></div><div class="sm mut">${k} из ${n} терминов уверенно</div></div>
- <div class="acts">${open ? `<button class="pri" data-s="${si}">Изучить</button><button data-q="${si}">Тест</button><button data-p="${si}" title="Промпт для разговора с Claude">Промпт</button>` : ''}</div></div>`;
+ <div class="acts">${open ? `<button class="pri" data-s="${si}">Изучить</button><button data-q="${si}">${testOpen(si) ? 'Тест' : '🔒 Тест'}</button><button data-p="${si}" title="Промпт для разговора с Claude">Промпт</button>` : ''}</div></div>`;
     }).join('')}</div>
  <div class="backup"><h3>Резервная копия прогресса</h3><p class="sm mut" style="margin:0 0 12px">Прогресс хранится только на этом телефоне. Сохраняйте файл раз в неделю и перед сменой телефона.</p>
  <div class="acts"><button id="bexp" ${Object.keys(st).length || pn ? '' : 'disabled'}>Сохранить прогресс</button><button id="bimp">Загрузить прогресс</button></div></div>
- <p class="sm mut" style="margin-top:20px">Как учиться: раздел → «Изучить» (картинки и объяснения) → «Тест» (все ответы без ошибок — тогда откроется следующий раздел) → разговор с Claude по промпту. На следующий день — «Повторить».</p>`;
+ <p class="sm mut" style="margin-top:20px">Как учиться: раздел → «Изучить» (все карточки по порядку) → «Тест» (все ответы без ошибок — тогда откроется следующий раздел) → разговор с Claude по промпту. На следующий день — «Повторить».</p>`;
     app.onclick = e => {
       const b = e.target.closest('button'); if (!b) return;
       if (b.dataset.s) study(+b.dataset.s);
-      else if (b.dataset.q) sectionTest(+b.dataset.q);
+      else if (b.dataset.q) { const si = +b.dataset.q; if (testOpen(si)) sectionTest(si); else toast('Тест откроется, когда пройдёте все карточки раздела в «Изучить»'); }
       else if (b.dataset.p) prompt(+b.dataset.p);
       else if (b.dataset.c) { const si = +b.dataset.c.split('-')[0]; if (isOpen(si)) peek(b.dataset.c); else toast(`Раздел ${si + 1} откроется после сдачи раздела ${si}`); }
       else if (b.id == 'bdue') cards(shuf(dueList()), 'Повторение на сегодня');
@@ -110,8 +109,7 @@
   function back(t) {
     return `<div class="t">${esc(t.t)}</div>
  <div class="row"><div class="k">Простыми словами</div><div class="x">${esc(t.d)}</div></div>
- ${t.e ? `<div class="row risk"><div class="k">Чем грозит / пример</div><div class="x">${esc(t.e)}</div></div>` : ''}
- ${t.a ? `<div class="row"><div class="k">Где в Argus</div><span class="code">${esc(t.a)}</span></div>` : ''}`;
+ ${t.e ? `<div class="row risk"><div class="k">Чем грозит</div><div class="x">${esc(t.e)}</div></div>` : ''}`;
   }
   function peek(id) {
     const t = T.find(x => x.id == id);
@@ -129,36 +127,55 @@
     }
   };
 
-  // ---- изучение: картинка «что это» + подпись, комикс «чем грозит» + подпись ----
+  // ---- изучение: квадратики 1…N, карточка (значок + название, «что это», «чем грозит»), ниже картинки ----
+  // Подробные тексты (ld, le) — для изучения; короткие (d, e) — для вопросов теста.
+  const para = s => esc(s).replace(/\n\n/g, '<br><br>');
   function study(si, list, title) {
     if (!isOpen(si)) return toast(`Раздел ${si + 1} откроется после сдачи раздела ${si}`);
     S = { m: 's', si, list: list || T.filter(t => t.si === si), i: 0, title: title || DATA[si].title }; drawStudy();
   }
   function drawStudy() {
-    const { list, i } = S, t = list[i], w = artOf(t), r = artOf(t, 'risk'), last = i === list.length - 1;
-    app.innerHTML = `<div class="view"><div class="crumbs"><button id="bh">← Все разделы</button><span class="mut sm">${esc(S.title)} · изучение · ${i + 1} / ${list.length}</span></div>
- <div class="prog"><b style="width:${(i + 1) / list.length * 100}%"></b></div>
- <div id="stv"><div class="st-term">${esc(t.t)}</div>
- ${w ? `<div class="st-pic"><img src="art/${esc(w)}" alt="Картинка: что такое ${esc(t.t)}" draggable="false"></div>` : ''}
- <div class="st-cap"><div class="k">Что это</div><div class="x">${esc(t.d)}</div></div>
- ${r ? `<div class="st-pic"><img src="art/${esc(r)}" alt="Комикс: чем грозит" draggable="false"></div>` : ''}
- ${t.e ? `<div class="st-cap risk"><div class="k">Чем грозит</div><div class="x">${esc(t.e)}</div></div>` : ''}
- ${t.a ? `<div class="st-cap"><div class="k">Пункт Argus</div><span class="code">${esc(t.a)}</span></div>` : ''}</div>
+    const { list, i, si } = S, t = list[i], w = artOf(t), r = artOf(t, 'risk'), ic = artOf(t, 'icon'), last = i === list.length - 1;
+    seen[t.id] = 1; save();
+    const all = T.filter(x => x.si === si), left = all.filter(x => !seen[x.id]).length, tOpen = testOpen(si);
+    const ld = t.ld || t.d, le = t.le || t.e;
+    app.innerHTML = `<div class="view"><div class="crumbs"><button id="bh">← Все разделы</button><span class="mut sm">${esc(S.title)} · ${i + 1} из ${list.length}</span></div>
+ <div class="sqs">${list.map((x, k) => `<button data-k="${k}" class="${k === i ? 'cur' : seen[x.id] ? 'done' : ''}" aria-label="Карточка ${k + 1}: ${esc(x.t)}">${k + 1}</button>`).join('')}</div>
+ <button class="tbtn${tOpen ? ' pri' : ''}" id="bt" ${tOpen ? '' : 'aria-disabled="true"'}>${tOpen ? 'Тест раздела →' : '🔒 Тест раздела'}</button>
+ <p class="thint">${tOpen ? `Нужно ${all.length} из ${all.length} без ошибок — тогда откроется следующий раздел` :`Откроется, когда пройдёте все ${all.length} карточек (осталось ${left})`}</p>
+ <div id="stv"><div class="card2"><div class="thead">${ic ? `<img class="ticon" src="art/${esc(ic)}" alt="" draggable="false">` : ''}<div class="st-term">${esc(t.t)}</div></div>
+ <div class="blk"><div class="k">Что это</div><div class="x">${para(ld)}</div></div>
+ ${le ? `<div class="blk risk"><div class="k">Чем грозит</div><div class="x">${para(le)}</div></div>` : ''}</div>
+ ${w || r ? '<p class="down">↓ Ниже — картинки</p>' : ''}
+ ${w ? `<p class="ph">Как это работает</p><div class="st-pic"><img src="art/${esc(w)}" alt="Картинка: что такое ${esc(t.t)}" draggable="false"></div>` : ''}
+ ${r ? `<p class="ph">Что будет, если ошибиться</p><div class="st-pic"><img src="art/${esc(r)}" alt="Комикс: чем грозит" draggable="false"></div>` : ''}</div>
  <div class="st-nav"><button id="sp" ${i ? '' : 'disabled'}>← Назад</button><button class="pri" id="sn">${last ? 'К тесту →' : 'Дальше →'}</button></div></div>`;
     app.onclick = e => {
       const b = e.target.closest('button'); if (!b) return;
       if (b.id == 'bh') home();
       else if (b.id == 'sp') stepStudy(-1);
       else if (b.id == 'sn') stepStudy(1);
+      else if (b.id == 'bt') goTest();
+      else if (b.dataset.k) { const k = +b.dataset.k; if (k !== S.i) { dir = k > S.i ? 'f' : 'b'; S.i = k; drawStudy(); } }
     };
     bindHSwipe(document.getElementById('stv'), dir => stepStudy(dir));
     top();
+  }
+  // Тест раздела открыт, когда просмотрены все карточки раздела (или тест уже проходили раньше).
+  function testOpen(si) { return isOpen(si) && (sec[si] != null || T.every(t => t.si !== si || seen[t.id])); }
+  function goTest() {
+    const si = S.si;
+    if (testOpen(si)) return sectionTest(si);
+    const miss = T.filter(t => t.si === si && !seen[t.id]);
+    toast(`Сначала пройдите все карточки. Осталось: ${miss.length}`);
+    const k = S.list.indexOf(miss[0]);
+    if (k >= 0) { dir = k > S.i ? 'f' : 'b'; S.i = k; drawStudy(); }
   }
   function stepStudy(step) {
     if (!S || S.m !== 's') return;
     const n = S.i + step;
     if (n < 0) return;
-    if (n >= S.list.length) return sectionTest(S.si);
+    if (n >= S.list.length) return goTest();
     S.i = n; dir = step > 0 ? 'f' : 'b'; drawStudy();
   }
   // свайп по экрану изучения: влево — дальше, вправо — назад
@@ -259,7 +276,8 @@
   function sectionTest(si) {
     if (!isOpen(si)) return toast(`Раздел ${si + 1} откроется после сдачи раздела ${si}`);
     const list = T.filter(t => t.si === si);
-    startQuiz(SRS.buildTest(list, list, hasPic, lastTypes), `Тест: раздел ${si + 1}`, si, list);
+    // без вопросов «по картинке»: картинки остаются в изучении (решение Улара)
+    startQuiz(SRS.buildTest(list, list, () => false, lastTypes), `${DATA[si].title} · тест`, si, list);
   }
   function exam() {
     if (!SRS.allPassed(sec, DATA.length)) return toast('Экзамен откроется, когда сданы все разделы');
@@ -270,15 +288,10 @@
     qs.forEach(q => { lastTypes[q.t.id] = q.ty; });
     S = { m: 'q', qs, i: 0, title, si, pool, n: qs.length, ok: 0, miss: [], res: {} }; drawQ();
   }
-  // Сверху всегда понятно, где вы: «Вопрос 3 из 13» или «Работа над ошибками: 1 из 2».
-  function stepLabel() {
-    if (S.i < S.n) return `Вопрос ${S.i + 1} из ${S.n}`;
-    return `Работа над ошибками: ${S.i - S.n + 1} из ${S.qs.length - S.n}`;
-  }
   function drawQ() {
     const q = S.qs[S.i], pic = q.pic && artOf(q.t);
     app.innerHTML = `<div class="view"><div class="crumbs"><button id="bh">← Выйти</button><span class="mut sm">${esc(S.title)}</span></div>
- <div class="q-step"><b>${stepLabel()}</b>${q.re ? '<span class="re-badge">на оценку не влияет</span>' : ''}</div>
+ <div class="q-step"><b>Вопрос ${S.i + 1} из ${S.n}</b></div>
  <div class="prog"><b style="width:${S.i / S.qs.length * 100}%"></b></div>
  <div class="q"><div class="q-hint">${esc(q.hint)}</div>
  ${pic ? `<div class="pic q-pic"><img src="art/${esc(pic)}" alt="Картинка без подписи"></div>` : ''}${q.ask ? `<div class="ask">${esc(q.ask)}</div>` : ''}</div>
@@ -289,44 +302,42 @@
   function pick(id) {
     const q = S.qs[S.i], ok = id == q.t.id; S.ans = true;
     buzz(ok ? 15 : [30, 50, 30]);
-    if (!q.re) {
-      grade(q.t.id, ok);
-      const r = S.res[q.t.si] || (S.res[q.t.si] = { ok: 0, n: 0 }); r.n++;
-      if (ok) { S.ok++; r.ok++; }
-      else { S.miss.push(q.t); S.qs.push(SRS.reAsk(q, S.pool, S.si === 'exam' ? () => false : hasPic)); }
-    } else if (ok) grade(q.t.id, true);   // разобрал ошибку — повтор завтра, а не сегодня (на оценку не влияет)
+    // Ошибку сразу показываем с правильным ответом; «работы над ошибками» в конце больше нет —
+    // после теста предлагаем повторить карточки с ошибками (решение Улара).
+    grade(q.t.id, ok);
+    const r = S.res[q.t.si] || (S.res[q.t.si] = { ok: 0, n: 0 }); r.n++;
+    if (ok) { S.ok++; r.ok++; } else S.miss.push(q.t);
     app.querySelectorAll('[data-o]').forEach(b => { if (b.dataset.o == q.t.id) b.classList.add('right'); else if (b.dataset.o == id) b.classList.add('wrong'); b.disabled = b.dataset.o != q.t.id && b.dataset.o != id; });
-    const more = S.i + 1 < S.qs.length, toErrors = more && S.i + 1 === S.n;
-    document.getElementById('fb').innerHTML = `<div class="fb ${ok ? 'fb-ok' : 'fb-bad'}"><div class="fb-h">${ok ? '✓ Верно' : '✗ Неверно'}</div>
- <div><b>${esc(q.t.t)}</b> — ${esc(q.t.d)}</div>
- ${!ok && !q.re ? '<div class="sm mut" style="margin-top:6px">Этот термин спросим ещё раз в конце — в «работе над ошибками».</div>' : ''}</div>
- <button class="pri" id="bnx">${!more ? 'Посмотреть итог' : toErrors ? 'К работе над ошибками →' : 'Дальше'}</button>`;
+    const more = S.i + 1 < S.qs.length, ic = artOf(q.t, 'icon'), firstMiss = !ok && S.miss.length === 1;
+    document.getElementById('fb').innerHTML = `<div class="fb ${ok ? 'fb-ok' : 'fb-bad'}"><div class="fb-h">${ok ? '✓ Верно' : '✗ Неверно. Правильно:'}</div>
+ <div class="fbt">${ic ? `<img src="art/${esc(ic)}" alt="">` : ''}<b>${esc(q.t.t)}</b></div><div>${esc(q.t.d)}</div>
+ ${firstMiss && S.si !== 'exam' ? `<div class="sm mut" style="margin-top:6px">Тест можно дойти до конца, но раздел уже не сдан — нужно ${S.n} из ${S.n}.</div>` : ''}</div>
+ <button class="pri" id="bnx">${more ? 'Дальше' : 'Посмотреть итог'}</button>`;
     const nx = document.getElementById('bnx'); nx.focus({ preventScroll: true }); nx.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
   function nextQ() { S.i++; if (S.i < S.qs.length) drawQ(); else quizDone(); }
 
   function quizDone() {
-    const { ok, n, si, title } = S, pct = score(ok, n), weak = [...new Set(S.miss)];
+    const { ok, n, si } = S, pct = score(ok, n), weak = [...new Set(S.miss)];
     if (si === 'exam') return examDone(pct, weak);
     const was = SRS.passed(sec, si);
     sec[si] = Math.max(sec[si] || 0, pct); save();
     const pass = pct >= PASS, nextOpen = pass && si + 1 < DATA.length;
     S = { m: 'r' };
-    app.innerHTML = `<div class="view res"><div class="crumbs"><button id="bh">← Все разделы</button><span class="mut sm">${esc(title)}</span></div>
- <div class="big ${pass ? '' : 'bad'}">${pct}%</div><h2>${pass ? (was ? 'Раздел сдан снова' : 'Раздел сдан!') : 'Пока не сдан'}</h2>
- <p style="margin-top:8px">Верно с первого раза: <b>${ok} из ${n}</b>. Для сдачи нужно ${n} из ${n} — без единой ошибки.</p>
- <p class="mut" style="margin-top:10px">${pass ? (nextOpen ? `Открыт раздел ${si + 2}: «${esc(DATA[si + 1].title)}».` : si + 1 === DATA.length ? 'Это был последний раздел.' : '') : 'Есть ошибки — следующий раздел пока закрыт. Повторите слабые термины и пройдите тест заново с первого вопроса (вопросы будут другие).'}</p>
- ${weak.length ? `<p class="mut" style="margin-top:14px">Слабые термины — вернутся в повторение:</p><ul class="weak">${weak.map(t => `<li>${esc(t.t)}</li>`).join('')}</ul>` : ''}
- <div class="acts" style="margin-top:16px">${pass ? (nextOpen ? `<button class="pri" id="bns">Раздел ${si + 2} →</button>` : SRS.allPassed(sec, DATA.length) ? '<button class="pri" id="bex">Итоговый экзамен</button>' : '') : `${weak.length ? '<button class="pri" id="bw">Повторить слабые</button>' : ''}<button id="brt">Пересдать</button>`}
- ${weak.length ? '<button id="bp">Промпт для Claude по слабым</button>' : ''}<button id="bh2">К разделам</button></div></div>`;
+    app.innerHTML = `<div class="view res"><div class="crumbs"><button id="bh">← Все разделы</button><span class="mut sm">${esc(DATA[si].title)} · тест</span></div>
+ <div class="big ${pass ? '' : 'bad'}">${ok} из ${n}</div><h2>${pass ? (was ? 'Раздел сдан снова' : 'Раздел сдан!') : 'Пока не сдан'}</h2>
+ <p style="margin-top:8px">${pass ? (nextOpen ? `Открыт раздел ${si + 2}: «${esc(DATA[si + 1].title)}».` : si + 1 === DATA.length ? 'Это был последний раздел.' : '') : nextOpen || si + 1 < DATA.length ? `Чтобы открыть раздел ${si + 2}, нужно ответить верно на все ${n} вопросов подряд.` : `Нужно ответить верно на все ${n} вопросов подряд.`}</p>
+ ${weak.length ? `<p class="mut" style="margin-top:14px">Ошибки — повторите эти карточки:</p><ul class="weak">${weak.map(t => `<li>${esc(t.t)}</li>`).join('')}</ul>` : ''}
+ <div class="acts res-acts" style="margin-top:16px">${pass ? (nextOpen ? `<button class="pri" id="bns">Раздел ${si + 2} →</button>` : SRS.allPassed(sec, DATA.length) ? '<button class="pri" id="bex">Итоговый экзамен</button>' : '') : `${weak.length ? '<button class="pri" id="bw">Повторить эти карточки</button>' : ''}<button id="brt">Пройти тест заново</button>`}
+ <button id="bh2">К разделам</button></div>
+ ${pass ? '' : '<p class="sm mut" style="margin-top:14px">При пересдаче вопросы пойдут в другом порядке, варианты ответов перемешаются, вопросы будут заданы по-другому.</p>'}</div>`;
     app.onclick = e => {
       const b = e.target.closest('button'); if (!b) return;
       if (b.id == 'bh' || b.id == 'bh2') home();
       else if (b.id == 'bns') study(si + 1);
       else if (b.id == 'bex') exam();
-      else if (b.id == 'bw') study(si, weak, 'Слабые термины');
+      else if (b.id == 'bw') study(si, weak, 'Ошибки теста');
       else if (b.id == 'brt') sectionTest(si);
-      else if (b.id == 'bp') prompt(null, weak);
     };
     top();
   }

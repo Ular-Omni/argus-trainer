@@ -95,6 +95,24 @@ button:disabled{opacity:.4;cursor:default}
 .st-cap.risk{border-left:4px solid var(--bad);padding-left:12px}
 .st-nav{position:sticky;bottom:0;background:var(--bg);padding:12px 0 max(12px,env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr 2fr;gap:10px;border-top:1.5px solid var(--line);z-index:2}
 .st-nav button{min-height:54px}
+/* изучение: квадратики, замок теста, карточка термина (значок + название), подписи над картинками */
+.sqs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.sqs button{min-height:0;width:40px;height:40px;padding:0;border-radius:8px;border:1.5px solid var(--line);background:transparent;color:var(--mut);font-weight:700;font-size:15px}
+.sqs button.done{background:var(--v1);border-color:var(--v2);color:var(--vdk)}
+.sqs button.cur{background:var(--v);border-color:var(--v);color:#fff}
+.tbtn{width:100%;margin:0 0 6px}
+.tbtn[aria-disabled]{background:var(--soft);color:var(--mut);border:1.5px dashed var(--line)}
+.thint{font-size:13px;color:var(--mut);margin:0 0 18px;text-align:center}
+.card2{border:1.5px solid var(--line);border-radius:18px;padding:18px 16px 6px;margin:0 auto 18px;max-width:440px}
+.thead{display:flex;align-items:center;gap:10px;margin:0 0 14px}.thead .st-term{margin:0}
+.ticon{width:80px;height:80px;flex:none;object-fit:contain}
+.blk{margin-bottom:16px}.blk .k{font-size:13px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.blk .x{font-size:18px;line-height:1.4}.blk.risk{border-left:4px solid var(--bad);padding-left:12px}
+.down{text-align:center;color:var(--mut);font-size:14px;margin:-4px 0 14px}
+.ph{font-size:13px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin:18px auto 6px;max-width:440px}
+.fbt{display:flex;align-items:center;gap:10px;margin:2px 0 6px}.fbt img{width:52px;height:52px;flex:none;object-fit:contain}
+.fbt b{font-family:"Sofia Sans Condensed","Arial Narrow",system-ui,sans-serif;font-size:26px;font-weight:800;line-height:1.05}
+.res-acts{display:grid;gap:10px}
 #stv{touch-action:pan-y}
 /* Замки и статусы */
 .grp.locked .cells{opacity:.35}
