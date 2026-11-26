@@ -252,7 +252,7 @@
       const r = S.res[q.t.si] || (S.res[q.t.si] = { ok: 0, n: 0 }); r.n++;
       if (ok) { S.ok++; r.ok++; }
       else { S.miss.push(q.t); S.qs.push(SRS.reAsk(q, S.pool, S.si === 'exam' ? () => false : hasPic)); }
-    }
+    } else if (ok) grade(q.t.id, true);   // разобрал ошибку — повтор завтра, а не сегодня (на оценку не влияет)
     app.querySelectorAll('[data-o]').forEach(b => { if (b.dataset.o == q.t.id) b.classList.add('right'); else if (b.dataset.o == id) b.classList.add('wrong'); b.disabled = b.dataset.o != q.t.id && b.dataset.o != id; });
     const more = S.i + 1 < S.qs.length, toErrors = more && S.i + 1 === S.n;
     document.getElementById('fb').innerHTML = `<div class="fb ${ok ? 'fb-ok' : 'fb-bad'}"><div class="fb-h">${ok ? '✓ Верно' : '✗ Неверно'}</div>

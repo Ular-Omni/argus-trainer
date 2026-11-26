@@ -86,8 +86,9 @@
   }
   function mask(text, t) {
     let out = text;
-    // скрываем слово целиком, вместе с окончанием: «токеном» → «…», «журнала» → «…»
-    for (const n of namesOf(t)) out = out.split(new RegExp(n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\p{L}*', 'giu')).join('…');
+    // скрываем слово целиком, вместе с окончанием: «токеном» → «…», «журнала» → «…».
+    // Только с начала слова: «роль» внутри «пароль» не трогаем (без lookbehind — для старых iPhone).
+    for (const n of namesOf(t)) out = out.replace(new RegExp('(^|[^\\p{L}])' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\p{L}*', 'giu'), '$1…');
     return out;
   }
 
@@ -102,7 +103,7 @@
     const others = shuf(pool.filter(x => x.id !== t.id), rnd).slice(0, 3);
     const opts = shuf([t, ...others], rnd);
     const q = { t, ty, hint: HINT[ty], pic: ty === 'p' };
-    if (ty === 'r') return { ...q, ask: `«Что такое ${t.t}?»`, opts: opts.map(x => ({ id: x.id, txt: x.d })) };
+    if (ty === 'r') return { ...q, ask: `«Что такое ${t.t}?»`, opts: opts.map(x => ({ id: x.id, txt: mask(x.d, t) })) };
     q.ask = ty === 'd' ? `«${mask(t.d, t)}»` : ty === 'e' ? `«${mask(t.e, t)}»` : '';
     return { ...q, opts: opts.map(x => ({ id: x.id, txt: x.t })) };
   }
