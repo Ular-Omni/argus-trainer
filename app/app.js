@@ -37,6 +37,38 @@
   }
   const top = () => window.scrollTo(0, 0);
 
+  // ---- анимации: чтобы приложение «чувствовалось» ----
+  // Если в телефоне включено «Уменьшить движение» — без анимаций (и в CSS тоже).
+  const calm = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  // Лёгкая вибрация — только Android; iPhone из браузера вибрировать не даёт, там просто ничего не будет.
+  const buzz = p => { if (calm) return; try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} };
+  let dir = ''; // 'f' — экран въезжает справа («Дальше»), 'b' — слева («Назад»), '' — снизу
+  // Каждый новый экран (любая замена содержимого app) плавно въезжает.
+  new MutationObserver(() => {
+    app.classList.remove('enter'); app.dataset.dir = dir; dir = '';
+    void app.offsetWidth; // перезапуск анимации
+    app.classList.add('enter');
+    paper(app);
+  }).observe(app, { childList: true });
+  // Картинки разворачиваются, как сложенный лист газеты: верхняя половина на месте,
+  // нижняя откидывается вниз по сгибу. Разворачивается, когда картинка появилась на экране.
+  const io = !calm && 'IntersectionObserver' in window && new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return;
+    io.unobserve(e.target); e.target.classList.add('open');
+  }), { threshold: 0.3 });
+  function paper(root) {
+    if (!io) return;
+    root.querySelectorAll('.st-pic, .pic').forEach(p => {
+      const img = p.querySelector('img');
+      if (!img || p.classList.contains('paper')) return;
+      const f = document.createElement('div'); f.className = 'flap'; f.setAttribute('aria-hidden', 'true');
+      const c = img.cloneNode(); c.alt = ''; f.appendChild(c);
+      f.addEventListener('animationend', e => { if (e.animationName === 'pFlap') f.remove(); });
+      p.classList.add('paper'); p.appendChild(f);
+      io.observe(p);
+    });
+  }
+
   // ---- главная ----
   function home() {
     S = null;
@@ -85,7 +117,7 @@
     const t = T.find(x => x.id == id);
     openM(`<div class="tag mut">${esc(DATA[t.si].title)} · ${LEV[lv(id)]}</div>${artOf(t) ? `<div class="pic" style="margin:10px 0"><img src="art/${esc(artOf(t))}" alt=""></div>` : ''}<div class="back-m">${back(t)}</div><div class="acts" style="margin-top:16px"><button class="dark" data-x>Закрыть</button></div>`);
   }
-  function openM(h) { mbox.innerHTML = h; modal.classList.add('on'); mbox.querySelector('button')?.focus(); }
+  function openM(h) { mbox.innerHTML = h; modal.classList.add('on'); paper(mbox); mbox.querySelector('button')?.focus(); }
   const closeM = () => modal.classList.remove('on');
   modal.onclick = e => {
     if (e.target == modal || e.target.closest('[data-x]')) closeM();
@@ -122,12 +154,12 @@
     bindHSwipe(document.getElementById('stv'), dir => stepStudy(dir));
     top();
   }
-  function stepStudy(dir) {
+  function stepStudy(step) {
     if (!S || S.m !== 's') return;
-    const n = S.i + dir;
+    const n = S.i + step;
     if (n < 0) return;
     if (n >= S.list.length) return sectionTest(S.si);
-    S.i = n; drawStudy();
+    S.i = n; dir = step > 0 ? 'f' : 'b'; drawStudy();
   }
   // свайп по экрану изучения: влево — дальше, вправо — назад
   function bindHSwipe(el, cb) {
@@ -161,8 +193,8 @@
       const b = e.target.closest('button,#cd'); if (!b) return;
       if (b.id == 'bh') home();
       else if (b.id == 'cd') { if (!swipe.justDragged) flip(); }
-      else if (b.id == 'bn') rate(0);
-      else if (b.id == 'by') rate(1);
+      else if (b.id == 'bn') flyOut(0);
+      else if (b.id == 'by') flyOut(1);
     };
     bindSwipe(document.getElementById('cd'));
     top();
@@ -170,8 +202,17 @@
   const isFlipped = () => document.getElementById('cd')?.classList.contains('f');
   function flip() { const c = document.getElementById('cd'); c.classList.toggle('f'); document.getElementById('ans').style.visibility = 'visible'; }
   // «Не вспомнил» — карточка уходит в конец колоды и вернётся, пока не вспомните.
+  // Кнопки «Вспомнил / Не вспомнил»: карточка улетает в ту же сторону, что и при свайпе.
+  function flyOut(ok) {
+    const el = document.getElementById('cd');
+    if (S.busy || !el) return;
+    if (calm) return rate(ok);
+    el.style.transform = `translateX(${ok ? 130 : -130}%) rotate(${ok ? 12 : -12}deg)`; el.style.opacity = 0;
+    S.busy = true; setTimeout(() => { S.busy = false; rate(ok); }, 200);
+  }
   function rate(ok) {
     if (S.busy) return;
+    buzz(ok ? 10 : [20, 40, 20]);
     const t = S.list[S.i];
     grade(t.id, ok);   // ошибся сегодня → даже если потом вспомнил, повтор завтра (см. srs.js)
     if (!ok) { S.miss.push(t); S.again.add(t.id); S.list.push(t); }
@@ -247,6 +288,7 @@
   }
   function pick(id) {
     const q = S.qs[S.i], ok = id == q.t.id; S.ans = true;
+    buzz(ok ? 15 : [30, 50, 30]);
     if (!q.re) {
       grade(q.t.id, ok);
       const r = S.res[q.t.si] || (S.res[q.t.si] = { ok: 0, n: 0 }); r.n++;
