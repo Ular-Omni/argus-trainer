@@ -1,5 +1,5 @@
 // Интерфейс тренажёра. Логика (повторение, тесты, замки, файл прогресса) — в srs.js.
-// Путь по разделу: Изучение (картинки + подписи) → Тест (≥80% — следующий раздел открыт).
+// Путь по разделу: Изучение (картинки + подписи) → Тест (все ответы верны с первого раза — следующий раздел открыт).
 // Дальше — «Повторить сегодня» (карточки с переворотом) и итоговый экзамен после всех разделов.
 (function () {
   'use strict';
@@ -59,7 +59,7 @@
     }).join('')}</div>
  <div class="backup"><h3>Резервная копия прогресса</h3><p class="sm mut" style="margin:0 0 12px">Прогресс хранится только на этом телефоне. Сохраняйте файл раз в неделю и перед сменой телефона.</p>
  <div class="acts"><button id="bexp" ${Object.keys(st).length || pn ? '' : 'disabled'}>Сохранить прогресс</button><button id="bimp">Загрузить прогресс</button></div></div>
- <p class="sm mut" style="margin-top:20px">Как учиться: раздел → «Изучить» (картинки и объяснения) → «Тест» (нужно ${PASS}%, тогда откроется следующий раздел) → разговор с Claude по промпту. На следующий день — «Повторить».</p>`;
+ <p class="sm mut" style="margin-top:20px">Как учиться: раздел → «Изучить» (картинки и объяснения) → «Тест» (все ответы без ошибок — тогда откроется следующий раздел) → разговор с Claude по промпту. На следующий день — «Повторить».</p>`;
     app.onclick = e => {
       const b = e.target.closest('button'); if (!b) return;
       if (b.dataset.s) study(+b.dataset.s);
@@ -172,9 +172,9 @@
   // «Не вспомнил» — карточка уходит в конец колоды и вернётся, пока не вспомните.
   function rate(ok) {
     if (S.busy) return;
-    const t = S.list[S.i], again = S.again.has(t.id);
-    if (ok) { if (again) { SRS.relearned(st, t.id); save(); } else grade(t.id, 1); }
-    else { if (!again) grade(t.id, 0); S.miss.push(t); S.again.add(t.id); S.list.push(t); }
+    const t = S.list[S.i];
+    grade(t.id, ok);   // ошибся сегодня → даже если потом вспомнил, повтор завтра (см. srs.js)
+    if (!ok) { S.miss.push(t); S.again.add(t.id); S.list.push(t); }
     S.i++;
     if (S.i < S.list.length) drawCard();
     else { const weak = [...new Set(S.miss)], n = new Set(S.list.map(x => x.id)).size; done(n - weak.length, n, weak, S.title); }
@@ -229,14 +229,20 @@
     qs.forEach(q => { lastTypes[q.t.id] = q.ty; });
     S = { m: 'q', qs, i: 0, title, si, pool, n: qs.length, ok: 0, miss: [], res: {} }; drawQ();
   }
+  // Сверху всегда понятно, где вы: «Вопрос 3 из 13» или «Работа над ошибками: 1 из 2».
+  function stepLabel() {
+    if (S.i < S.n) return `Вопрос ${S.i + 1} из ${S.n}`;
+    return `Работа над ошибками: ${S.i - S.n + 1} из ${S.qs.length - S.n}`;
+  }
   function drawQ() {
     const q = S.qs[S.i], pic = q.pic && artOf(q.t);
-    app.innerHTML = `<div class="view"><div class="crumbs"><button id="bh">← Все разделы</button><span class="mut sm">${esc(S.title)} · ${Math.min(S.i + 1, S.n)} / ${S.n}${q.re ? ' · повтор ошибки' : ''}</span></div>
+    app.innerHTML = `<div class="view"><div class="crumbs"><button id="bh">← Выйти</button><span class="mut sm">${esc(S.title)}</span></div>
+ <div class="q-step"><b>${stepLabel()}</b>${q.re ? '<span class="re-badge">на оценку не влияет</span>' : ''}</div>
  <div class="prog"><b style="width:${S.i / S.qs.length * 100}%"></b></div>
- <div class="q">${q.re ? '<div class="re-badge">Повтор ошибки — в оценку не идёт</div>' : `<div class="sm mut">${esc(DATA[q.t.si].title)}</div>`}
- ${pic ? `<div class="pic q-pic"><img src="art/${esc(pic)}" alt="Картинка без подписи"></div>` : ''}<div class="ask">${esc(q.ask)}</div></div>
+ <div class="q"><div class="q-hint">${esc(q.hint)}</div>
+ ${pic ? `<div class="pic q-pic"><img src="art/${esc(pic)}" alt="Картинка без подписи"></div>` : ''}${q.ask ? `<div class="ask">${esc(q.ask)}</div>` : ''}</div>
  <div class="opts">${q.opts.map((o, k) => `<button data-o="${o.id}">${k + 1}. ${esc(o.txt)}</button>`).join('')}</div><div id="fb"></div></div>`;
-    app.onclick = e => { const b = e.target.closest('button'); if (!b) return; if (b.id == 'bh') { if (confirm('Выйти из теста? Результат не сохранится.')) home(); } else if (b.dataset.o && !S.ans) pick(b.dataset.o); else if (b.id == 'bnx') nextQ(); };
+    app.onclick = e => { const b = e.target.closest('button'); if (!b) return; if (b.id == 'bh') { if (confirm('Выйти из теста? Ответы этого теста не засчитаются для сдачи раздела.')) home(); } else if (b.dataset.o && !S.ans) pick(b.dataset.o); else if (b.id == 'bnx') nextQ(); };
     S.ans = false; top();
   }
   function pick(id) {
@@ -248,7 +254,11 @@
       else { S.miss.push(q.t); S.qs.push(SRS.reAsk(q, S.pool, S.si === 'exam' ? () => false : hasPic)); }
     }
     app.querySelectorAll('[data-o]').forEach(b => { if (b.dataset.o == q.t.id) b.classList.add('right'); else if (b.dataset.o == id) b.classList.add('wrong'); b.disabled = b.dataset.o != q.t.id && b.dataset.o != id; });
-    document.getElementById('fb').innerHTML = `<div class="fb"><b>${ok ? 'Верно.' : 'Нет.'}</b> ${esc(q.t.t)} — ${esc(q.t.d)}${q.t.e ? `. Риск: ${esc(q.t.e)}` : ''}${q.t.a ? ` <span class="code">${esc(q.t.a)}</span>` : ''}${!ok && !q.re ? '<div class="sm mut" style="margin-top:6px">Этот термин спросим ещё раз в конце теста.</div>' : ''}</div><button class="pri" id="bnx">${S.i + 1 < S.qs.length ? 'Дальше' : 'Итог'}</button>`;
+    const more = S.i + 1 < S.qs.length, toErrors = more && S.i + 1 === S.n;
+    document.getElementById('fb').innerHTML = `<div class="fb ${ok ? 'fb-ok' : 'fb-bad'}"><div class="fb-h">${ok ? '✓ Верно' : '✗ Неверно'}</div>
+ <div><b>${esc(q.t.t)}</b> — ${esc(q.t.d)}</div>
+ ${!ok && !q.re ? '<div class="sm mut" style="margin-top:6px">Этот термин спросим ещё раз в конце — в «работе над ошибками».</div>' : ''}</div>
+ <button class="pri" id="bnx">${!more ? 'Посмотреть итог' : toErrors ? 'К работе над ошибками →' : 'Дальше'}</button>`;
     const nx = document.getElementById('bnx'); nx.focus({ preventScroll: true }); nx.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
   function nextQ() { S.i++; if (S.i < S.qs.length) drawQ(); else quizDone(); }
@@ -261,8 +271,9 @@
     const pass = pct >= PASS, nextOpen = pass && si + 1 < DATA.length;
     S = { m: 'r' };
     app.innerHTML = `<div class="view res"><div class="crumbs"><button id="bh">← Все разделы</button><span class="mut sm">${esc(title)}</span></div>
- <div class="big ${pass ? '' : 'bad'}">${pct}%</div><h2>${ok} из ${n} — ${pass ? (was ? 'раздел сдан снова' : 'раздел сдан!') : `нужно ${PASS}%, пока не сдан`}</h2>
- <p class="mut" style="margin-top:10px">${pass ? (nextOpen ? `Открыт раздел ${si + 2}: «${esc(DATA[si + 1].title)}».` : si + 1 === DATA.length ? 'Это был последний раздел.' : '') : 'Повторите слабые термины и пересдайте — вопросы будут другие.'}</p>
+ <div class="big ${pass ? '' : 'bad'}">${pct}%</div><h2>${pass ? (was ? 'Раздел сдан снова' : 'Раздел сдан!') : 'Пока не сдан'}</h2>
+ <p style="margin-top:8px">Верно с первого раза: <b>${ok} из ${n}</b>. Для сдачи нужно ${n} из ${n} — без единой ошибки.</p>
+ <p class="mut" style="margin-top:10px">${pass ? (nextOpen ? `Открыт раздел ${si + 2}: «${esc(DATA[si + 1].title)}».` : si + 1 === DATA.length ? 'Это был последний раздел.' : '') : 'Есть ошибки — следующий раздел пока закрыт. Повторите слабые термины и пройдите тест заново с первого вопроса (вопросы будут другие).'}</p>
  ${weak.length ? `<p class="mut" style="margin-top:14px">Слабые термины — вернутся в повторение:</p><ul class="weak">${weak.map(t => `<li>${esc(t.t)}</li>`).join('')}</ul>` : ''}
  <div class="acts" style="margin-top:16px">${pass ? (nextOpen ? `<button class="pri" id="bns">Раздел ${si + 2} →</button>` : SRS.allPassed(sec, DATA.length) ? '<button class="pri" id="bex">Итоговый экзамен</button>' : '') : `${weak.length ? '<button class="pri" id="bw">Повторить слабые</button>' : ''}<button id="brt">Пересдать</button>`}
  ${weak.length ? '<button id="bp">Промпт для Claude по слабым</button>' : ''}<button id="bh2">К разделам</button></div></div>`;

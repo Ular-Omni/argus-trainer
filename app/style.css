@@ -106,6 +106,12 @@ button:disabled{opacity:.4;cursor:default}
 .exam-rows{margin:14px 0;display:grid;gap:0}
 .exam-row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1.5px solid var(--line)}
 .exam-row .bad{color:var(--bad);font-weight:700}
+.q-step{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;font-size:15px}
+.q-step .re-badge{font-size:12px}
+.q-hint{font-size:14px;font-weight:600;color:var(--v);margin-bottom:6px}
+.fb{border-radius:12px;padding:12px 14px;margin:14px 0}
+.fb-ok{background:var(--v1)}.fb-bad{background:var(--bad1)}
+.fb-h{font-weight:700;font-size:17px;margin-bottom:4px}
 @media(max-width:860px){.hero{grid-template-columns:1fr}.sec{grid-template-columns:1fr}.today{flex-direction:row;flex-wrap:wrap;align-items:end}}
 @media(max-width:600px){.ans{grid-template-columns:1fr 1fr}.keys{display:none}.sec .acts button{flex:1}.backup .acts button{flex:1}}
 @media(prefers-reduced-motion:reduce){.inner,.card{transition:none}}
