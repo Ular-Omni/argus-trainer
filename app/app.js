@@ -79,14 +79,14 @@
  <div class="hero"><div class="today"><div><div class="sm">Повторить сегодня</div><div class="big">${d}</div><div class="sm">${d ? 'карточек ждут повторения' : pn ? 'всё повторено — можно дальше' : 'начните с первого раздела'}</div></div>
  <div class="acts">${d ? '<button class="w" id="bdue">Повторить</button>' : ''}${next >= 0 ? `<button id="bnext" class="${d ? '' : 'w'}">${st[T.find(t => t.si === next).id] ? 'Продолжить' : 'Начать'}: раздел ${next + 1}</button>` : ''}</div></div>
  <div class="map"><div class="sm" style="font-weight:600;margin-bottom:12px">Карта знаний — каждая клетка один термин</div>
- ${DATA.map((s, si) => `<div class="grp${isOpen(si) ? '' : ' locked'}"><div class="lab">${isOpen(si) ? '' : '🔒 '}${si + 1}. ${esc(s.title)}</div><div class="cells">${s.terms.map((t, ti) => { const id = si + '-' + ti; return `<button class="cell l${lv(id)}" data-c="${id}" title="${esc(t.t)} — ${LEV[lv(id)]}" aria-label="${esc(t.t)} — ${LEV[lv(id)]}"></button>`; }).join('')}</div></div>`).join('')}
+ ${DATA.map((s, si) => `<div class="grp${isOpen(si) ? '' : ' locked'}"><div class="lab"><span>${isOpen(si) ? '' : '🔒 '}${si + 1}. ${esc(s.title)}</span>${isOpen(si) && s.terms.some(t => t.q) ? `<button class="fbtn" data-f="${si}" title="Вопрос — ответ вслух — перевернуть">🃏 Карточки</button>` : ''}</div><div class="cells">${s.terms.map((t, ti) => { const id = si + '-' + ti; return `<button class="cell l${lv(id)}" data-c="${id}" title="${esc(t.t)} — ${LEV[lv(id)]}" aria-label="${esc(t.t)} — ${LEV[lv(id)]}"></button>`; }).join('')}</div></div>`).join('')}
  <div class="legend">${LEV.map((n, i) => `<span><i class="l${i}"></i>${n}</span>`).join('')}</div></div></div>
  <div class="secs">${DATA.map((s, si) => {
       const n = s.terms.length, k = s.terms.filter((t, ti) => lv(si + '-' + ti) >= 3).length, best = sec[si];
       const open = isOpen(si), ok = SRS.passed(sec, si);
       const status = ok ? '<span class="ok-badge">✓ сдан</span>' : !open ? `🔒 откроется после раздела ${si}` : best != null ? `не сдан · нужно ${n} из ${n} без ошибок` : 'не начат';
       return `<div class="sec${open ? '' : ' locked'}"><div><h3>${si + 1}. ${esc(s.title)}</h3><p>${esc(s.intro)}</p></div><div><div class="sm mut">${status}</div><div class="bar"><b style="width:${k / n * 100}%"></b></div><div class="sm mut">${k} из ${n} терминов уверенно</div></div>
- <div class="acts">${open ? `<button class="pri" data-s="${si}">Изучить</button>${s.terms.some(t => t.q) ? `<button data-f="${si}" title="Вопрос — ответ вслух — перевернуть">Карточки</button>` : ''}<button data-q="${si}">${testOpen(si) ? 'Тест' : '🔒 Тест'}</button><button data-p="${si}" title="Промпт для разговора с Claude">Промпт</button>` : ''}</div></div>`;
+ <div class="acts">${open ? `<button class="pri" data-s="${si}">Изучить</button><button data-q="${si}">${testOpen(si) ? 'Тест' : '🔒 Тест'}</button><button data-p="${si}" title="Промпт для разговора с Claude">Промпт</button>` : ''}</div></div>`;
     }).join('')}</div>
  <div class="backup"><h3>Резервная копия прогресса</h3><p class="sm mut" style="margin:0 0 12px">Прогресс хранится только на этом телефоне. Сохраняйте файл раз в неделю и перед сменой телефона.</p>
  <div class="acts"><button id="bexp" ${Object.keys(st).length || pn ? '' : 'disabled'}>Сохранить прогресс</button><button id="bimp">Загрузить прогресс</button></div></div>

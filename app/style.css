@@ -31,7 +31,8 @@ button:disabled{opacity:.4;cursor:default}
 .today .big{font-size:clamp(64px,10vw,112px)}
 .today button{border-color:#fff;color:#fff}.today button.w{background:#fff;color:var(--vdk)}
 .map{border:1.5px solid var(--line);border-radius:18px;padding:18px}
-.map .grp{margin-bottom:12px}.map .lab{font-size:13px;color:var(--mut);margin-bottom:4px}
+.map .grp{margin-bottom:12px}.map .lab{font-size:13px;color:var(--mut);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:24px}
+.map .fbtn{min-height:44px;padding:0 14px;font-size:14px;font-weight:700;color:var(--v);border-color:var(--v)}
 .cells{display:flex;flex-wrap:wrap;gap:4px}
 /* клетка карты маленькая на вид, но зона нажатия расширена до 26px */
 .cell{width:22px;height:22px;border-radius:5px;border:1.5px solid var(--line);background:transparent;padding:0;min-height:0;cursor:pointer;position:relative}
