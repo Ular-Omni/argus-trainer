@@ -176,16 +176,32 @@
     if (n >= S.list.length) return goTest();
     S.i = n; dir = step > 0 ? 'f' : 'b'; drawStudy();
   }
+  // Отслеживание горизонтального смахивания. На телефоне — события касания (touch):
+  // pointer-события iPhone часто обрывает посреди движения пальца, и свайп «не листался».
+  // Мышь на компьютере — через pointer. h: begin(), move(dx), end(drag, dx), cancel().
+  function track(el, h) {
+    let x0 = 0, y0 = 0, dx = 0, on = false, drag = false;
+    const start = (x, y) => { on = true; drag = false; dx = 0; x0 = x; y0 = y; };
+    const move = (x, y, e) => {
+      if (!on) return;
+      dx = x - x0; const dy = y - y0;
+      if (!drag && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.3) { drag = true; h.begin && h.begin(); }
+      if (drag) { if (e && e.cancelable) e.preventDefault(); h.move && h.move(dx); }
+    };
+    const end = () => { if (!on) return; on = false; h.end(drag, dx); };
+    const cancel = () => { if (!on) return; on = false; h.cancel && h.cancel(); };
+    el.addEventListener('touchstart', e => { if (e.touches.length === 1) start(e.touches[0].clientX, e.touches[0].clientY); else cancel(); }, { passive: true });
+    el.addEventListener('touchmove', e => move(e.touches[0].clientX, e.touches[0].clientY, e), { passive: false });
+    el.addEventListener('touchend', end);
+    el.addEventListener('touchcancel', cancel);
+    el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' && e.button === 0) start(e.clientX, e.clientY); });
+    el.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') move(e.clientX, e.clientY); });
+    el.addEventListener('pointerup', e => { if (e.pointerType === 'mouse') end(); });
+    el.addEventListener('pointercancel', e => { if (e.pointerType === 'mouse') cancel(); });
+  }
   // свайп по экрану изучения: влево — дальше, вправо — назад
   function bindHSwipe(el, cb) {
-    let x0 = 0, y0 = 0, on = false;
-    el.addEventListener('pointerdown', e => { on = true; x0 = e.clientX; y0 = e.clientY; });
-    el.addEventListener('pointerup', e => {
-      if (!on) return; on = false;
-      const dx = e.clientX - x0, dy = e.clientY - y0;
-      if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) cb(dx < 0 ? 1 : -1);
-    });
-    el.addEventListener('pointercancel', () => { on = false; });
+    track(el, { end: (drag, dx) => { if (drag && Math.abs(dx) > 70) cb(dx < 0 ? 1 : -1); } });
   }
 
   // ---- повторение: карточки с переворотом ----
@@ -205,12 +221,12 @@
     const backHtml = q && ic ? `<img class="ticon" src="art/${esc(ic)}" alt="" draggable="false">${back(t)}` : back(t);
     app.innerHTML = `<div class="view"><div class="crumbs"><button id="bh">← Все разделы</button><span class="mut sm">${esc(S.title)} · ${i + 1} / ${list.length}</span></div>
  <div class="prog"><b style="width:${i / list.length * 100}%"></b></div>
- <div class="card${q ? ' qcard' : ''}" id="cd" tabindex="0" role="button" aria-label="Перевернуть карточку"><span class="swipe-l" id="sl">Не вспомнил</span><span class="swipe-r" id="sr">Вспомнил</span><div class="inner">
+ <div class="card${q ? ' qcard' : ''}" id="cd" tabindex="0" role="button" aria-label="Перевернуть карточку"><span class="swipe-l" id="sl">Не ответил</span><span class="swipe-r" id="sr">Ответил</span><div class="inner">
  <div class="face front"><div class="tag">${esc(DATA[t.si].title)} · ${again ? 'ещё раз' : LEV[lv(t.id)]}</div>
  ${front}</div>
- <div class="face back">${backHtml}<div class="hint mut sm" style="margin-top:auto">Свайп вправо — вспомнил, влево — не вспомнил</div></div></div></div>
- <div class="ans" id="ans" style="visibility:hidden"><button id="bn">Не вспомнил</button><button class="pri" id="by">Вспомнил</button></div>
- <div class="keys">Пробел — перевернуть · 1 — не вспомнил · 2 — вспомнил</div></div>`;
+ <div class="face back">${backHtml}<div class="hint mut sm" style="margin-top:auto">Свайп вправо — ответил, влево — не ответил</div></div></div></div>
+ <div class="ans" id="ans" style="visibility:hidden"><button id="bn">Не ответил</button><button class="pri" id="by">Ответил</button></div>
+ <div class="keys">Пробел — перевернуть · 1 — не ответил · 2 — ответил</div></div>`;
     app.onclick = e => {
       const b = e.target.closest('button,#cd'); if (!b) return;
       if (b.id == 'bh') home();
@@ -223,8 +239,8 @@
   }
   const isFlipped = () => document.getElementById('cd')?.classList.contains('f');
   function flip() { const c = document.getElementById('cd'); c.classList.toggle('f'); document.getElementById('ans').style.visibility = 'visible'; }
-  // «Не вспомнил» — карточка уходит в конец колоды и вернётся, пока не вспомните.
-  // Кнопки «Вспомнил / Не вспомнил»: карточка улетает в ту же сторону, что и при свайпе.
+  // «Не ответил» — карточка уходит в конец колоды и вернётся, пока не ответите.
+  // Кнопки «Ответил / Не ответил»: карточка улетает в ту же сторону, что и при свайпе.
   function flyOut(ok) {
     const el = document.getElementById('cd');
     if (S.busy || !el) return;
@@ -243,39 +259,36 @@
     else { const weak = [...new Set(S.miss)], n = new Set(S.list.map(x => x.id)).size; done(n - weak.length, n, weak, S.title); }
   }
 
-  // Свайп карточки: работает только после переворота — сначала нужно увидеть ответ.
+  // Свайп карточки. Лицевая сторона: смахнули в любую сторону — карточка переворачивается (видно ответ).
+  // Обратная сторона: вправо — ответил, влево — не ответил; карточка улетает, открывается следующая.
   const swipe = { justDragged: false };
   function bindSwipe(el) {
-    let x0 = 0, y0 = 0, dx = 0, drag = false, down = false;
     const sl = el.querySelector('#sl'), sr = el.querySelector('#sr');
     const reset = () => { el.classList.remove('drag'); el.style.transform = ''; sl.style.opacity = 0; sr.style.opacity = 0; };
-    el.addEventListener('pointerdown', e => { if (e.button > 0) return; down = true; drag = false; dx = 0; x0 = e.clientX; y0 = e.clientY; swipe.justDragged = false; });
-    el.addEventListener('pointermove', e => {
-      if (!down) return;
-      dx = e.clientX - x0; const dy = e.clientY - y0;
-      if (!drag && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.3) { drag = true; el.classList.add('drag'); try { el.setPointerCapture(e.pointerId); } catch (_) {} }
-      if (!drag) return;
-      const k = isFlipped() ? 1 : 0.25;
-      el.style.transform = `translateX(${dx * k}px) rotate(${dx * k / 30}deg)`;
-      if (isFlipped()) { sr.style.opacity = Math.max(0, Math.min(1, dx / 90)); sl.style.opacity = Math.max(0, Math.min(1, -dx / 90)); }
+    track(el, {
+      begin: () => el.classList.add('drag'),
+      move: dx => {
+        const k = isFlipped() ? 1 : 0.35;
+        el.style.transform = `translateX(${dx * k}px) rotate(${dx * k / 30}deg)`;
+        if (isFlipped()) { sr.style.opacity = Math.max(0, Math.min(1, dx / 80)); sl.style.opacity = Math.max(0, Math.min(1, -dx / 80)); }
+      },
+      end: (drag, dx) => {
+        if (!drag) return;
+        swipe.justDragged = true; setTimeout(() => { swipe.justDragged = false; }, 350);
+        if (Math.abs(dx) > 70 && isFlipped() && !S.busy) {
+          const ok = dx > 0 ? 1 : 0;
+          el.classList.remove('drag');
+          el.style.transform = `translateX(${ok ? 130 : -130}%) rotate(${ok ? 12 : -12}deg)`; el.style.opacity = 0;
+          S.busy = true; setTimeout(() => { S.busy = false; rate(ok); }, 200);
+        } else {
+          reset();
+          if (Math.abs(dx) > 50 && !isFlipped()) flip();
+        }
+      },
+      cancel: reset
     });
-    const end = () => {
-      if (!down) return; down = false;
-      if (!drag) return;
-      swipe.justDragged = true; setTimeout(() => { swipe.justDragged = false; }, 50);
-      if (Math.abs(dx) > 90 && isFlipped() && !S.busy) {
-        const ok = dx > 0 ? 1 : 0;
-        el.classList.remove('drag');
-        el.style.transform = `translateX(${ok ? 130 : -130}%) rotate(${ok ? 12 : -12}deg)`; el.style.opacity = 0;
-        S.busy = true; setTimeout(() => { S.busy = false; rate(ok); }, 200);
-      } else {
-        if (Math.abs(dx) > 90 && !isFlipped()) toast('Сначала переверните карточку', 1800);
-        reset();
-      }
-    };
-    el.addEventListener('pointerup', end);
-    el.addEventListener('pointercancel', () => { down = false; if (drag) reset(); });
   }
+
 
   // ---- тест раздела и экзамен ----
   function sectionTest(si) {
@@ -365,7 +378,7 @@
   function done(ok, n, miss, title) {
     const pct = score(ok, n); S = { m: 'r' };
     app.innerHTML = `<div class="view res"><div class="crumbs"><button id="bh">← Все разделы</button><span class="mut sm">${esc(title)}</span></div>
- <div class="big">${pct}%</div><h2>${ok} из ${n} вспомнили с первого раза</h2>
+ <div class="big">${pct}%</div><h2>${ok} из ${n} ответили с первого раза</h2>
  ${miss.length ? `<p class="mut" style="margin-top:14px">Трудные сегодня — повторим завтра:</p><ul class="weak">${miss.map(t => `<li>${esc(t.t)}</li>`).join('')}</ul>` : ''}
  <div class="acts" style="margin-top:16px">${miss.length ? '<button id="bp">Промпт для Claude по трудным</button>' : ''}<button class="pri" id="bh2">К разделам</button></div></div>`;
     app.onclick = e => { const b = e.target.closest('button'); if (!b) return; if (b.id == 'bh' || b.id == 'bh2') home(); else if (b.id == 'bp') prompt(null, miss); };
