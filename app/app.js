@@ -86,7 +86,7 @@
       const open = isOpen(si), ok = SRS.passed(sec, si);
       const status = ok ? '<span class="ok-badge">✓ сдан</span>' : !open ? `🔒 откроется после раздела ${si}` : best != null ? `не сдан · нужно ${n} из ${n} без ошибок` : 'не начат';
       return `<div class="sec${open ? '' : ' locked'}"><div><h3>${si + 1}. ${esc(s.title)}</h3><p>${esc(s.intro)}</p></div><div><div class="sm mut">${status}</div><div class="bar"><b style="width:${k / n * 100}%"></b></div><div class="sm mut">${k} из ${n} терминов уверенно</div></div>
- <div class="acts">${open ? `<button class="pri" data-s="${si}">Изучить</button><button data-q="${si}">${testOpen(si) ? 'Тест' : '🔒 Тест'}</button><button data-p="${si}" title="Промпт для разговора с Claude">Промпт</button>` : ''}</div></div>`;
+ <div class="acts">${open ? `<button class="pri" data-s="${si}">Изучить</button>${s.terms.some(t => t.q) ? `<button data-f="${si}" title="Вопрос — ответ вслух — перевернуть">Карточки</button>` : ''}<button data-q="${si}">${testOpen(si) ? 'Тест' : '🔒 Тест'}</button><button data-p="${si}" title="Промпт для разговора с Claude">Промпт</button>` : ''}</div></div>`;
     }).join('')}</div>
  <div class="backup"><h3>Резервная копия прогресса</h3><p class="sm mut" style="margin:0 0 12px">Прогресс хранится только на этом телефоне. Сохраняйте файл раз в неделю и перед сменой телефона.</p>
  <div class="acts"><button id="bexp" ${Object.keys(st).length || pn ? '' : 'disabled'}>Сохранить прогресс</button><button id="bimp">Загрузить прогресс</button></div></div>
@@ -94,9 +94,10 @@
     app.onclick = e => {
       const b = e.target.closest('button'); if (!b) return;
       if (b.dataset.s) study(+b.dataset.s);
+      else if (b.dataset.f) { const si = +b.dataset.f; cards(shuf(T.filter(t => t.si === si && t.q)), DATA[si].title + ' · карточки', true); }
       else if (b.dataset.q) { const si = +b.dataset.q; if (testOpen(si)) sectionTest(si); else toast('Тест откроется, когда пройдёте все карточки раздела в «Изучить»'); }
       else if (b.dataset.p) prompt(+b.dataset.p);
-      else if (b.dataset.c) { const si = +b.dataset.c.split('-')[0]; if (isOpen(si)) peek(b.dataset.c); else toast(`Раздел ${si + 1} откроется после сдачи раздела ${si}`); }
+      else if (b.dataset.c) { const si = +b.dataset.c.split('-')[0]; if (isOpen(si)) study(si, null, null, +b.dataset.c.split('-')[1]); else toast(`Раздел ${si + 1} откроется после сдачи раздела ${si}`); }
       else if (b.id == 'bdue') cards(shuf(dueList()), 'Повторение на сегодня');
       else if (b.id == 'bnext') study(next);
       else if (b.id == 'bexam') exam();
@@ -110,10 +111,6 @@
     return `<div class="t">${esc(t.t)}</div>
  <div class="row"><div class="k">Простыми словами</div><div class="x">${esc(t.d)}</div></div>
  ${t.e ? `<div class="row risk"><div class="k">Чем грозит</div><div class="x">${esc(t.e)}</div></div>` : ''}`;
-  }
-  function peek(id) {
-    const t = T.find(x => x.id == id);
-    openM(`<div class="tag mut">${esc(DATA[t.si].title)} · ${LEV[lv(id)]}</div>${artOf(t) ? `<div class="pic" style="margin:10px 0"><img src="art/${esc(artOf(t))}" alt=""></div>` : ''}<div class="back-m">${back(t)}</div><div class="acts" style="margin-top:16px"><button class="dark" data-x>Закрыть</button></div>`);
   }
   function openM(h) { mbox.innerHTML = h; modal.classList.add('on'); paper(mbox); mbox.querySelector('button')?.focus(); }
   const closeM = () => modal.classList.remove('on');
@@ -130,9 +127,10 @@
   // ---- изучение: квадратики 1…N, карточка (значок + название, «что это», «чем грозит»), ниже картинки ----
   // Подробные тексты (ld, le) — для изучения; короткие (d, e) — для вопросов теста.
   const para = s => esc(s).replace(/\n\n/g, '<br><br>');
-  function study(si, list, title) {
+  // i — с какой карточки начать (клетка карты знаний открывает сразу свой термин)
+  function study(si, list, title, i = 0) {
     if (!isOpen(si)) return toast(`Раздел ${si + 1} откроется после сдачи раздела ${si}`);
-    S = { m: 's', si, list: list || T.filter(t => t.si === si), i: 0, title: title || DATA[si].title }; drawStudy();
+    S = { m: 's', si, list: list || T.filter(t => t.si === si), i, title: title || DATA[si].title }; drawStudy();
   }
   function drawStudy() {
     const { list, i, si } = S, t = list[i], w = artOf(t), r = artOf(t, 'risk'), ic = artOf(t, 'icon'), last = i === list.length - 1;
@@ -191,19 +189,26 @@
   }
 
   // ---- повторение: карточки с переворотом ----
-  function cards(list, title) {
+  // q = true — карточки-вопросы раздела: спереди вопрос (поле q) и картинка к вопросу, сзади — термин.
+  function cards(list, title, q = false) {
     if (!list.length) return home();
-    S = { m: 'c', list: [...list], i: 0, title, miss: [], again: new Set() }; drawCard();
+    S = { m: 'c', q, list: [...list], i: 0, title, miss: [], again: new Set() }; drawCard();
   }
   function drawCard() {
-    const { list, i } = S, t = list[i], a = artOf(t), again = S.again.has(t.id);
+    const { list, i, q } = S, t = list[i], again = S.again.has(t.id);
+    const a = q ? artOf(t, 'q') : artOf(t), ic = artOf(t, 'icon');
+    const front = q
+      ? `${a ? `<div class="pic"><img src="art/${esc(a)}" alt="Картинка к вопросу" draggable="false"></div>` : ''}
+ <div class="qtext">${esc(t.q)}</div><div class="hint">Ответьте вслух, потом коснитесь карточки</div>`
+      : `${a ? `<div class="pic"><img src="art/${esc(a)}" alt="Иллюстрация к термину" draggable="false"></div>` : ''}
+ <div class="big">${esc(t.t)}</div><div class="hint">Объясните вслух своими словами, потом коснитесь карточки</div>`;
+    const backHtml = q && ic ? `<img class="ticon" src="art/${esc(ic)}" alt="" draggable="false">${back(t)}` : back(t);
     app.innerHTML = `<div class="view"><div class="crumbs"><button id="bh">← Все разделы</button><span class="mut sm">${esc(S.title)} · ${i + 1} / ${list.length}</span></div>
  <div class="prog"><b style="width:${i / list.length * 100}%"></b></div>
- <div class="card" id="cd" tabindex="0" role="button" aria-label="Перевернуть карточку"><span class="swipe-l" id="sl">Не вспомнил</span><span class="swipe-r" id="sr">Вспомнил</span><div class="inner">
+ <div class="card${q ? ' qcard' : ''}" id="cd" tabindex="0" role="button" aria-label="Перевернуть карточку"><span class="swipe-l" id="sl">Не вспомнил</span><span class="swipe-r" id="sr">Вспомнил</span><div class="inner">
  <div class="face front"><div class="tag">${esc(DATA[t.si].title)} · ${again ? 'ещё раз' : LEV[lv(t.id)]}</div>
- ${a ? `<div class="pic"><img src="art/${esc(a)}" alt="Иллюстрация к термину" draggable="false"></div>` : ''}
- <div class="big">${esc(t.t)}</div><div class="hint">Объясните вслух своими словами, потом коснитесь карточки</div></div>
- <div class="face back">${back(t)}<div class="hint mut sm" style="margin-top:auto">Свайп вправо — вспомнил, влево — не вспомнил</div></div></div></div>
+ ${front}</div>
+ <div class="face back">${backHtml}<div class="hint mut sm" style="margin-top:auto">Свайп вправо — вспомнил, влево — не вспомнил</div></div></div></div>
  <div class="ans" id="ans" style="visibility:hidden"><button id="bn">Не вспомнил</button><button class="pri" id="by">Вспомнил</button></div>
  <div class="keys">Пробел — перевернуть · 1 — не вспомнил · 2 — вспомнил</div></div>`;
     app.onclick = e => {

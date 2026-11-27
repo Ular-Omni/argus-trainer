@@ -66,6 +66,9 @@ button:disabled{opacity:.4;cursor:default}
 .code{display:inline-block;font-weight:600;background:var(--v);color:#fff;border-radius:6px;padding:1px 8px;font-size:14px}
 .tag{font-size:13px;opacity:.7}
 .hint{opacity:.75;font-size:15px}
+.qcard,.qcard .inner{min-height:520px}
+.qtext{font-size:clamp(20px,5vw,26px);font-weight:700;line-height:1.25}
+.back .ticon{width:72px;height:72px}
 .swipe-l,.swipe-r{position:absolute;top:18px;z-index:2;font-weight:700;padding:6px 12px;border-radius:8px;opacity:0;pointer-events:none;font-size:15px}
 .swipe-l{left:18px;background:var(--bg);color:var(--ink);border:2px solid var(--ink)}
 .swipe-r{right:18px;background:var(--v);color:#fff}
@@ -131,7 +134,7 @@ button:disabled{opacity:.4;cursor:default}
 .fb-ok{background:var(--v1)}.fb-bad{background:var(--bad1)}
 .fb-h{font-weight:700;font-size:17px;margin-bottom:4px}
 @media(max-width:860px){.hero{grid-template-columns:1fr}.sec{grid-template-columns:1fr}.today{flex-direction:row;flex-wrap:wrap;align-items:end}}
-@media(max-width:600px){.ans{grid-template-columns:1fr 1fr}.keys{display:none}.sec .acts button{flex:1}.backup .acts button{flex:1}}
+@media(max-width:600px){.ans{grid-template-columns:1fr 1fr}.keys{display:none}.sec .acts button{flex:1 1 40%}.backup .acts button{flex:1}}
 
 /* ---------- Анимации: «вес» приложения ---------- */
 /* Нажатие: кнопка вдавливается. У главной кнопки — «подложка», как у настоящей клавиши. */
