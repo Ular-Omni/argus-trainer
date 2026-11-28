@@ -79,7 +79,7 @@
  <div class="hero"><div class="today"><div><div class="sm">Повторить сегодня</div><div class="big">${d}</div><div class="sm">${d ? 'карточек ждут повторения' : pn ? 'всё повторено — можно дальше' : 'начните с первого раздела'}</div></div>
  <div class="acts">${d ? '<button class="w" id="bdue">Повторить</button>' : ''}${next >= 0 ? `<button id="bnext" class="${d ? '' : 'w'}">${st[T.find(t => t.si === next).id] ? 'Продолжить' : 'Начать'}: раздел ${next + 1}</button>` : ''}</div></div>
  <div class="map"><div class="sm" style="font-weight:600;margin-bottom:12px">Карта знаний — каждая клетка один термин</div>
- ${DATA.map((s, si) => `<div class="grp${isOpen(si) ? '' : ' locked'}"><div class="lab"><span>${isOpen(si) ? '' : '🔒 '}${si + 1}. ${esc(s.title)}</span>${isOpen(si) && s.terms.some(t => t.q) ? `<button class="fbtn" data-f="${si}" title="Вопрос — ответ вслух — перевернуть">🃏 Карточки</button>` : ''}</div><div class="cells">${s.terms.map((t, ti) => { const id = si + '-' + ti; return `<button class="cell l${lv(id)}" data-c="${id}" title="${esc(t.t)} — ${LEV[lv(id)]}" aria-label="${esc(t.t)} — ${LEV[lv(id)]}"></button>`; }).join('')}</div></div>`).join('')}
+ ${DATA.map((s, si) => `<div class="grp${isOpen(si) ? '' : ' locked'}"><div class="lab"><span>${isOpen(si) ? '' : '🔒 '}${si + 1}. ${esc(s.title)}</span>${isOpen(si) ? `<span class="fbtns">${s.terms.some(t => t.q) ? `<button class="fbtn" data-f="${si}" title="Вопрос — ответ вслух — перевернуть">🃏 Карточки</button>` : ''}<button class="fbtn" data-tm="${si}" title="Термин — объяснить вслух — посмотреть описание">📖 Термины</button></span>` : ''}</div><div class="cells">${s.terms.map((t, ti) => { const id = si + '-' + ti; return `<button class="cell l${lv(id)}" data-c="${id}" title="${esc(t.t)} — ${LEV[lv(id)]}" aria-label="${esc(t.t)} — ${LEV[lv(id)]}"></button>`; }).join('')}</div></div>`).join('')}
  <div class="legend">${LEV.map((n, i) => `<span><i class="l${i}"></i>${n}</span>`).join('')}</div></div></div>
  <div class="secs">${DATA.map((s, si) => {
       const n = s.terms.length, k = s.terms.filter((t, ti) => lv(si + '-' + ti) >= 3).length, best = sec[si];
@@ -95,6 +95,7 @@
       const b = e.target.closest('button'); if (!b) return;
       if (b.dataset.s) study(+b.dataset.s);
       else if (b.dataset.f) { const si = +b.dataset.f; cards(shuf(T.filter(t => t.si === si && t.q)), DATA[si].title + ' · карточки', true); }
+      else if (b.dataset.tm) { const si = +b.dataset.tm; cards(shuf(T.filter(t => t.si === si)), DATA[si].title + ' · термины', 't'); }
       else if (b.dataset.q) { const si = +b.dataset.q; if (testOpen(si)) sectionTest(si); else toast('Тест откроется, когда пройдёте все карточки раздела в «Изучить»'); }
       else if (b.dataset.p) prompt(+b.dataset.p);
       else if (b.dataset.c) { const si = +b.dataset.c.split('-')[0]; if (isOpen(si)) study(si, null, null, +b.dataset.c.split('-')[1]); else toast(`Раздел ${si + 1} откроется после сдачи раздела ${si}`); }
@@ -132,21 +133,26 @@
     if (!isOpen(si)) return toast(`Раздел ${si + 1} откроется после сдачи раздела ${si}`);
     S = { m: 's', si, list: list || T.filter(t => t.si === si), i, title: title || DATA[si].title }; drawStudy();
   }
-  function drawStudy() {
-    const { list, i, si } = S, t = list[i], w = artOf(t), r = artOf(t, 'risk'), ic = artOf(t, 'icon'), last = i === list.length - 1;
-    seen[t.id] = 1; save();
-    const all = T.filter(x => x.si === si), left = all.filter(x => !seen[x.id]).length, tOpen = testOpen(si);
-    const ld = t.ld || t.d, le = t.le || t.e;
-    app.innerHTML = `<div class="view"><div class="crumbs"><button id="bh">← Все разделы</button><span class="mut sm">${esc(S.title)} · ${i + 1} из ${list.length}</span></div>
- <div class="sqs">${list.map((x, k) => `<button data-k="${k}" class="${k === i ? 'cur' : seen[x.id] ? 'done' : ''}" aria-label="Карточка ${k + 1}: ${esc(x.t)}">${k + 1}</button>`).join('')}</div>
- <button class="tbtn${tOpen ? ' pri' : ''}" id="bt" ${tOpen ? '' : 'aria-disabled="true"'}>${tOpen ? 'Тест раздела →' : '🔒 Тест раздела'}</button>
- <p class="thint">${tOpen ? `Нужно ${all.length} из ${all.length} без ошибок — тогда откроется следующий раздел` :`Откроется, когда пройдёте все ${all.length} карточек (осталось ${left})`}</p>
- <div id="stv"><div class="card2"><div class="thead">${ic ? `<img class="ticon" src="art/${esc(ic)}" alt="" draggable="false">` : ''}<div class="st-term">${esc(t.t)}</div></div>
+  // Полное описание термина: значок + название, «что это», «чем грозит», ниже картинки.
+  // Используется в «Изучить» и на обороте карточек «Термины».
+  function detail(t) {
+    const w = artOf(t), r = artOf(t, 'risk'), ic = artOf(t, 'icon'), ld = t.ld || t.d, le = t.le || t.e;
+    return `<div class="card2"><div class="thead">${ic ? `<img class="ticon" src="art/${esc(ic)}" alt="" draggable="false">` : ''}<div class="st-term">${esc(t.t)}</div></div>
  <div class="blk"><div class="k">Что это</div><div class="x">${para(ld)}</div></div>
  ${le ? `<div class="blk risk"><div class="k">Чем грозит</div><div class="x">${para(le)}</div></div>` : ''}</div>
  ${w || r ? '<p class="down">↓ Ниже — картинки</p>' : ''}
  ${w ? `<p class="ph">Как это работает</p><div class="st-pic"><img src="art/${esc(w)}" alt="Картинка: что такое ${esc(t.t)}" draggable="false"></div>` : ''}
- ${r ? `<p class="ph">Что будет, если ошибиться</p><div class="st-pic"><img src="art/${esc(r)}" alt="Комикс: чем грозит" draggable="false"></div>` : ''}</div>
+ ${r ? `<p class="ph">Что будет, если ошибиться</p><div class="st-pic"><img src="art/${esc(r)}" alt="Комикс: чем грозит" draggable="false"></div>` : ''}`;
+  }
+  function drawStudy() {
+    const { list, i, si } = S, t = list[i], last = i === list.length - 1;
+    seen[t.id] = 1; save();
+    const all = T.filter(x => x.si === si), left = all.filter(x => !seen[x.id]).length, tOpen = testOpen(si);
+    app.innerHTML = `<div class="view"><div class="crumbs"><button id="bh">← Все разделы</button><span class="mut sm">${esc(S.title)} · ${i + 1} из ${list.length}</span></div>
+ <div class="sqs">${list.map((x, k) => `<button data-k="${k}" class="${k === i ? 'cur' : seen[x.id] ? 'done' : ''}" aria-label="Карточка ${k + 1}: ${esc(x.t)}">${k + 1}</button>`).join('')}</div>
+ <button class="tbtn${tOpen ? ' pri' : ''}" id="bt" ${tOpen ? '' : 'aria-disabled="true"'}>${tOpen ? 'Тест раздела →' : '🔒 Тест раздела'}</button>
+ <p class="thint">${tOpen ? `Нужно ${all.length} из ${all.length} без ошибок — тогда откроется следующий раздел` :`Откроется, когда пройдёте все ${all.length} карточек (осталось ${left})`}</p>
+ <div id="stv">${detail(t)}</div>
  <div class="st-nav"><button id="sp" ${i ? '' : 'disabled'}>← Назад</button><button class="pri" id="sn">${last ? 'К тесту →' : 'Дальше →'}</button></div></div>`;
     app.onclick = e => {
       const b = e.target.closest('button'); if (!b) return;
@@ -206,14 +212,18 @@
 
   // ---- повторение: карточки с переворотом ----
   // q = true — карточки-вопросы раздела: спереди вопрос (поле q) и картинка к вопросу, сзади — термин.
-  function cards(list, title, q = false) {
+  // mode 't' — «Термины»: спереди только «<термин> — что это?», после переворота — полное описание с картинками.
+  function cards(list, title, mode = false) {
     if (!list.length) return home();
-    S = { m: 'c', q, list: [...list], i: 0, title, miss: [], again: new Set() }; drawCard();
+    S = { m: 'c', q: mode === true, tm: mode === 't', list: [...list], i: 0, title, miss: [], again: new Set() }; drawCard();
   }
   function drawCard() {
-    const { list, i, q } = S, t = list[i], again = S.again.has(t.id);
-    const a = q ? artOf(t, 'q') : artOf(t), ic = artOf(t, 'icon');
-    const front = q
+    const { list, i, q, tm } = S, t = list[i], again = S.again.has(t.id);
+    S.open = false;
+    const a = q ? artOf(t, 'q') : tm ? null : artOf(t), ic = artOf(t, 'icon');
+    const front = tm
+      ? `<div class="big">${esc(t.t)} — что это?</div><div class="hint">Проговорите вслух, потом коснитесь карточки</div>`
+      : q
       ? `${a ? `<div class="pic"><img src="art/${esc(a)}" alt="Картинка к вопросу" draggable="false"></div>` : ''}
  <div class="qtext">${esc(t.q)}</div><div class="hint">Ответьте вслух, потом коснитесь карточки</div>`
       : `${a ? `<div class="pic"><img src="art/${esc(a)}" alt="Иллюстрация к термину" draggable="false"></div>` : ''}
@@ -225,7 +235,7 @@
  <div class="face front"><div class="tag">${esc(DATA[t.si].title)} · ${again ? 'ещё раз' : LEV[lv(t.id)]}</div>
  ${front}</div>
  <div class="face back">${backHtml}<div class="hint mut sm" style="margin-top:auto">Свайп вправо — ответил, влево — не ответил</div></div></div></div>
- <div class="ans" id="ans" style="visibility:hidden"><button id="bn">Не ответил</button><button class="pri" id="by">Ответил</button></div>
+ <div class="ans${tm ? ' stick' : ''}" id="ans" style="visibility:hidden"><button id="bn">Не ответил</button><button class="pri" id="by">Ответил</button></div>
  <div class="keys">Пробел — перевернуть · 1 — не ответил · 2 — ответил</div></div>`;
     app.onclick = e => {
       const b = e.target.closest('button,#cd'); if (!b) return;
@@ -237,8 +247,24 @@
     bindSwipe(document.getElementById('cd'));
     top();
   }
-  const isFlipped = () => document.getElementById('cd')?.classList.contains('f');
-  function flip() { const c = document.getElementById('cd'); c.classList.toggle('f'); document.getElementById('ans').style.visibility = 'visible'; }
+  const isFlipped = () => (S && S.tm) ? !!S.open : document.getElementById('cd')?.classList.contains('f');
+  function flip() {
+    const c = document.getElementById('cd');
+    if (S.tm) { if (!S.open) reveal(); return; }
+    c.classList.toggle('f'); document.getElementById('ans').style.visibility = 'visible';
+  }
+  // «Термины»: полное описание длинное и с картинками — в переворачиваемую карточку не помещается,
+  // поэтому на её месте открывается обычный блок с прокруткой (с анимацией поворота).
+  function reveal() {
+    const c = document.getElementById('cd'), t = S.list[S.i];
+    S.open = true;
+    const d = document.createElement('div');
+    d.id = 'cd'; d.className = 'tdetail';
+    d.innerHTML = detail(t);
+    c.replaceWith(d);
+    document.getElementById('ans').style.visibility = 'visible';
+    document.querySelector('.keys')?.remove();
+  }
   // «Не ответил» — карточка уходит в конец колоды и вернётся, пока не ответите.
   // Кнопки «Ответил / Не ответил»: карточка улетает в ту же сторону, что и при свайпе.
   function flyOut(ok) {

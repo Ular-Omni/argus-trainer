@@ -242,5 +242,451 @@
   "risk": "3-13-risk.svg",
   "icon": "3-13-icon.svg",
   "q": "3-13-q.svg"
+ },
+ "4-1": {
+  "what": "4-1-what.svg",
+  "risk": "4-1-risk.svg",
+  "icon": "4-1-icon.svg",
+  "q": "4-1-q.svg"
+ },
+ "4-2": {
+  "what": "4-2-what.svg",
+  "risk": "4-2-risk.svg",
+  "icon": "4-2-icon.svg",
+  "q": "4-2-q.svg"
+ },
+ "4-3": {
+  "what": "4-3-what.svg",
+  "risk": "4-3-risk.svg",
+  "icon": "4-3-icon.svg",
+  "q": "4-3-q.svg"
+ },
+ "4-4": {
+  "what": "4-4-what.svg",
+  "risk": "4-4-risk.svg",
+  "icon": "4-4-icon.svg",
+  "q": "4-4-q.svg"
+ },
+ "4-5": {
+  "what": "4-5-what.svg",
+  "risk": "4-5-risk.svg",
+  "icon": "4-5-icon.svg",
+  "q": "4-5-q.svg"
+ },
+ "4-6": {
+  "what": "4-6-what.svg",
+  "risk": "4-6-risk.svg",
+  "icon": "4-6-icon.svg",
+  "q": "4-6-q.svg"
+ },
+ "4-7": {
+  "what": "4-7-what.svg",
+  "risk": "4-7-risk.svg",
+  "icon": "4-7-icon.svg",
+  "q": "4-7-q.svg"
+ },
+ "4-8": {
+  "what": "4-8-what.svg",
+  "risk": "4-8-risk.svg",
+  "icon": "4-8-icon.svg",
+  "q": "4-8-q.svg"
+ },
+ "4-9": {
+  "what": "4-9-what.svg",
+  "risk": "4-9-risk.svg",
+  "icon": "4-9-icon.svg",
+  "q": "4-9-q.svg"
+ },
+ "4-10": {
+  "what": "4-10-what.svg",
+  "risk": "4-10-risk.svg",
+  "icon": "4-10-icon.svg",
+  "q": "4-10-q.svg"
+ },
+ "4-11": {
+  "what": "4-11-what.svg",
+  "risk": "4-11-risk.svg",
+  "icon": "4-11-icon.svg",
+  "q": "4-11-q.svg"
+ },
+ "4-12": {
+  "what": "4-12-what.svg",
+  "risk": "4-12-risk.svg",
+  "icon": "4-12-icon.svg",
+  "q": "4-12-q.svg"
+ },
+ "4-13": {
+  "what": "4-13-what.svg",
+  "risk": "4-13-risk.svg",
+  "icon": "4-13-icon.svg",
+  "q": "4-13-q.svg"
+ },
+ "4-14": {
+  "what": "4-14-what.svg",
+  "risk": "4-14-risk.svg",
+  "icon": "4-14-icon.svg",
+  "q": "4-14-q.svg"
+ },
+ "4-15": {
+  "what": "4-15-what.svg",
+  "risk": "4-15-risk.svg",
+  "icon": "4-15-icon.svg",
+  "q": "4-15-q.svg"
+ },
+ "4-16": {
+  "what": "4-16-what.svg",
+  "risk": "4-16-risk.svg",
+  "icon": "4-16-icon.svg",
+  "q": "4-16-q.svg"
+ },
+ "5-1": {
+  "what": "5-1-what.svg",
+  "risk": "5-1-risk.svg",
+  "icon": "5-1-icon.svg",
+  "q": "5-1-q.svg"
+ },
+ "5-2": {
+  "what": "5-2-what.svg",
+  "risk": "5-2-risk.svg",
+  "icon": "5-2-icon.svg",
+  "q": "5-2-q.svg"
+ },
+ "5-3": {
+  "what": "5-3-what.svg",
+  "risk": "5-3-risk.svg",
+  "icon": "5-3-icon.svg",
+  "q": "5-3-q.svg"
+ },
+ "5-4": {
+  "what": "5-4-what.svg",
+  "risk": "5-4-risk.svg",
+  "icon": "5-4-icon.svg",
+  "q": "5-4-q.svg"
+ },
+ "5-5": {
+  "what": "5-5-what.svg",
+  "risk": "5-5-risk.svg",
+  "icon": "5-5-icon.svg",
+  "q": "5-5-q.svg"
+ },
+ "5-6": {
+  "what": "5-6-what.svg",
+  "risk": "5-6-risk.svg",
+  "icon": "5-6-icon.svg",
+  "q": "5-6-q.svg"
+ },
+ "5-7": {
+  "what": "5-7-what.svg",
+  "icon": "5-7-icon.svg",
+  "q": "5-7-q.svg"
+ },
+ "5-8": {
+  "what": "5-8-what.svg",
+  "icon": "5-8-icon.svg",
+  "q": "5-8-q.svg"
+ },
+ "5-9": {
+  "what": "5-9-what.svg",
+  "risk": "5-9-risk.svg",
+  "icon": "5-9-icon.svg",
+  "q": "5-9-q.svg"
+ },
+ "5-10": {
+  "what": "5-10-what.svg",
+  "risk": "5-10-risk.svg",
+  "icon": "5-10-icon.svg",
+  "q": "5-10-q.svg"
+ },
+ "5-11": {
+  "what": "5-11-what.svg",
+  "risk": "5-11-risk.svg",
+  "icon": "5-11-icon.svg",
+  "q": "5-11-q.svg"
+ },
+ "6-1": {
+  "what": "6-1-what.svg",
+  "risk": "6-1-risk.svg",
+  "icon": "6-1-icon.svg",
+  "q": "6-1-q.svg"
+ },
+ "6-2": {
+  "what": "6-2-what.svg",
+  "risk": "6-2-risk.svg",
+  "icon": "6-2-icon.svg",
+  "q": "6-2-q.svg"
+ },
+ "6-3": {
+  "what": "6-3-what.svg",
+  "risk": "6-3-risk.svg",
+  "icon": "6-3-icon.svg",
+  "q": "6-3-q.svg"
+ },
+ "6-4": {
+  "what": "6-4-what.svg",
+  "risk": "6-4-risk.svg",
+  "icon": "6-4-icon.svg",
+  "q": "6-4-q.svg"
+ },
+ "6-5": {
+  "what": "6-5-what.svg",
+  "risk": "6-5-risk.svg",
+  "icon": "6-5-icon.svg",
+  "q": "6-5-q.svg"
+ },
+ "6-6": {
+  "what": "6-6-what.svg",
+  "risk": "6-6-risk.svg",
+  "icon": "6-6-icon.svg",
+  "q": "6-6-q.svg"
+ },
+ "6-7": {
+  "what": "6-7-what.svg",
+  "risk": "6-7-risk.svg",
+  "icon": "6-7-icon.svg",
+  "q": "6-7-q.svg"
+ },
+ "6-8": {
+  "what": "6-8-what.svg",
+  "icon": "6-8-icon.svg",
+  "q": "6-8-q.svg"
+ },
+ "6-9": {
+  "what": "6-9-what.svg",
+  "risk": "6-9-risk.svg",
+  "icon": "6-9-icon.svg",
+  "q": "6-9-q.svg"
+ },
+ "6-10": {
+  "what": "6-10-what.svg",
+  "risk": "6-10-risk.svg",
+  "icon": "6-10-icon.svg",
+  "q": "6-10-q.svg"
+ },
+ "6-11": {
+  "what": "6-11-what.svg",
+  "risk": "6-11-risk.svg",
+  "icon": "6-11-icon.svg",
+  "q": "6-11-q.svg"
+ },
+ "6-12": {
+  "what": "6-12-what.svg",
+  "risk": "6-12-risk.svg",
+  "icon": "6-12-icon.svg",
+  "q": "6-12-q.svg"
+ },
+ "6-13": {
+  "what": "6-13-what.svg",
+  "risk": "6-13-risk.svg",
+  "icon": "6-13-icon.svg",
+  "q": "6-13-q.svg"
+ },
+ "6-14": {
+  "what": "6-14-what.svg",
+  "risk": "6-14-risk.svg",
+  "icon": "6-14-icon.svg",
+  "q": "6-14-q.svg"
+ },
+ "7-1": {
+  "what": "7-1-what.svg",
+  "risk": "7-1-risk.svg",
+  "icon": "7-1-icon.svg",
+  "q": "7-1-q.svg"
+ },
+ "7-2": {
+  "what": "7-2-what.svg",
+  "risk": "7-2-risk.svg",
+  "icon": "7-2-icon.svg",
+  "q": "7-2-q.svg"
+ },
+ "7-3": {
+  "what": "7-3-what.svg",
+  "risk": "7-3-risk.svg",
+  "icon": "7-3-icon.svg",
+  "q": "7-3-q.svg"
+ },
+ "7-4": {
+  "what": "7-4-what.svg",
+  "risk": "7-4-risk.svg",
+  "icon": "7-4-icon.svg",
+  "q": "7-4-q.svg"
+ },
+ "7-5": {
+  "what": "7-5-what.svg",
+  "risk": "7-5-risk.svg",
+  "icon": "7-5-icon.svg",
+  "q": "7-5-q.svg"
+ },
+ "7-6": {
+  "what": "7-6-what.svg",
+  "risk": "7-6-risk.svg",
+  "icon": "7-6-icon.svg",
+  "q": "7-6-q.svg"
+ },
+ "7-7": {
+  "what": "7-7-what.svg",
+  "risk": "7-7-risk.svg",
+  "icon": "7-7-icon.svg",
+  "q": "7-7-q.svg"
+ },
+ "7-8": {
+  "what": "7-8-what.svg",
+  "risk": "7-8-risk.svg",
+  "icon": "7-8-icon.svg",
+  "q": "7-8-q.svg"
+ },
+ "7-9": {
+  "what": "7-9-what.svg",
+  "risk": "7-9-risk.svg",
+  "icon": "7-9-icon.svg",
+  "q": "7-9-q.svg"
+ },
+ "7-10": {
+  "what": "7-10-what.svg",
+  "risk": "7-10-risk.svg",
+  "icon": "7-10-icon.svg",
+  "q": "7-10-q.svg"
+ },
+ "7-11": {
+  "what": "7-11-what.svg",
+  "risk": "7-11-risk.svg",
+  "icon": "7-11-icon.svg",
+  "q": "7-11-q.svg"
+ },
+ "8-1": {
+  "what": "8-1-what.svg",
+  "risk": "8-1-risk.svg",
+  "icon": "8-1-icon.svg",
+  "q": "8-1-q.svg"
+ },
+ "8-2": {
+  "what": "8-2-what.svg",
+  "risk": "8-2-risk.svg",
+  "icon": "8-2-icon.svg",
+  "q": "8-2-q.svg"
+ },
+ "8-3": {
+  "what": "8-3-what.svg",
+  "risk": "8-3-risk.svg",
+  "icon": "8-3-icon.svg",
+  "q": "8-3-q.svg"
+ },
+ "8-4": {
+  "what": "8-4-what.svg",
+  "risk": "8-4-risk.svg",
+  "icon": "8-4-icon.svg",
+  "q": "8-4-q.svg"
+ },
+ "8-5": {
+  "what": "8-5-what.svg",
+  "risk": "8-5-risk.svg",
+  "icon": "8-5-icon.svg",
+  "q": "8-5-q.svg"
+ },
+ "8-6": {
+  "what": "8-6-what.svg",
+  "risk": "8-6-risk.svg",
+  "icon": "8-6-icon.svg",
+  "q": "8-6-q.svg"
+ },
+ "8-7": {
+  "what": "8-7-what.svg",
+  "icon": "8-7-icon.svg",
+  "q": "8-7-q.svg"
+ },
+ "8-8": {
+  "what": "8-8-what.svg",
+  "risk": "8-8-risk.svg",
+  "icon": "8-8-icon.svg",
+  "q": "8-8-q.svg"
+ },
+ "8-9": {
+  "what": "8-9-what.svg",
+  "risk": "8-9-risk.svg",
+  "icon": "8-9-icon.svg",
+  "q": "8-9-q.svg"
+ },
+ "8-10": {
+  "what": "8-10-what.svg",
+  "risk": "8-10-risk.svg",
+  "icon": "8-10-icon.svg",
+  "q": "8-10-q.svg"
+ },
+ "8-11": {
+  "what": "8-11-what.svg",
+  "risk": "8-11-risk.svg",
+  "icon": "8-11-icon.svg",
+  "q": "8-11-q.svg"
+ },
+ "8-12": {
+  "what": "8-12-what.svg",
+  "risk": "8-12-risk.svg",
+  "icon": "8-12-icon.svg",
+  "q": "8-12-q.svg"
+ },
+ "8-13": {
+  "what": "8-13-what.svg",
+  "risk": "8-13-risk.svg",
+  "icon": "8-13-icon.svg",
+  "q": "8-13-q.svg"
+ },
+ "9-1": {
+  "what": "9-1-what.svg",
+  "icon": "9-1-icon.svg",
+  "q": "9-1-q.svg"
+ },
+ "9-2": {
+  "what": "9-2-what.svg",
+  "icon": "9-2-icon.svg",
+  "q": "9-2-q.svg"
+ },
+ "9-3": {
+  "what": "9-3-what.svg",
+  "icon": "9-3-icon.svg",
+  "q": "9-3-q.svg"
+ },
+ "9-4": {
+  "what": "9-4-what.svg",
+  "icon": "9-4-icon.svg",
+  "q": "9-4-q.svg"
+ },
+ "9-5": {
+  "what": "9-5-what.svg",
+  "icon": "9-5-icon.svg",
+  "q": "9-5-q.svg"
+ },
+ "9-6": {
+  "what": "9-6-what.svg",
+  "icon": "9-6-icon.svg",
+  "q": "9-6-q.svg"
+ },
+ "9-7": {
+  "what": "9-7-what.svg",
+  "icon": "9-7-icon.svg",
+  "q": "9-7-q.svg"
+ },
+ "9-8": {
+  "what": "9-8-what.svg",
+  "icon": "9-8-icon.svg",
+  "q": "9-8-q.svg"
+ },
+ "9-9": {
+  "what": "9-9-what.svg",
+  "icon": "9-9-icon.svg",
+  "q": "9-9-q.svg"
+ },
+ "9-10": {
+  "what": "9-10-what.svg",
+  "icon": "9-10-icon.svg",
+  "q": "9-10-q.svg"
+ },
+ "9-11": {
+  "what": "9-11-what.svg",
+  "icon": "9-11-icon.svg",
+  "q": "9-11-q.svg"
+ },
+ "9-12": {
+  "what": "9-12-what.svg",
+  "icon": "9-12-icon.svg",
+  "q": "9-12-q.svg"
  }
 }
